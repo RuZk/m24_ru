@@ -19,7 +19,8 @@ def index():
         url = str(i['href']).decode('utf8')
 #		print title, url
         addDir(title, url, 2)
-
+    addLink("M24 Live Stream", liveStream(), '')
+	
 def listVideos(url):
     soup = getHtml(url)
     video = soup.find('div', attrs={'id' : 'VideosList'}).findAll('a')
@@ -32,6 +33,16 @@ def listVideos(url):
         addLink(title, videoUrl, url)
     #next page
     return 1
+	
+def liveStream():
+        content = getUrl("http://tv.m24.ru/")
+        url = re.compile('src=\"(http:\/\/player.rutv.ru.+?)\"', re.DOTALL).findall(content)[0]
+        player = getUrl(url)
+        url = re.compile('\"video\":\"(.+?)\"', re.DOTALL).findall(player)[0]
+        url = url.replace('\\', '')
+        return url
+        #listitem = xbmcgui.ListItem(path=url)
+        #return xbmcplugin.setResolvedUrl(pluginhandle, True, listitem)	
 
 def parameters_string_to_dict(parameters):
         ''' Convert parameters encoded in a URL to a dict. '''
@@ -44,7 +55,8 @@ def parameters_string_to_dict(parameters):
                     paramDict[paramSplits[0]] = paramSplits[1]
         return paramDict
 
-def addLink(title, url, thumb):
+def addLink(title, url, thumb, mode = 0):
+#    url = url + '?mode='+str(mode)
     item = xbmcgui.ListItem(title, iconImage='DefaultVideo.png', thumbnailImage=thumb)
     item.setInfo( type='Video', infoLabels={'Title': title} )
     xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=url, listitem=item)
@@ -67,6 +79,14 @@ def getHtml(url):
     soup = BeautifulSoup(html, fromEncoding="utf-8")
     return soup
 
+def getUrl(url):
+        req = urllib2.Request(url)
+        req.add_header('User-Agent', 'Mozilla/5.0 (iPhone; U; CPU iPhone OS 4_0 like Mac OS X; en-us) AppleWebKit/532.9 (KHTML, like Gecko) Version/4.0.5 Mobile/8A293 Safari/6531.22.7')
+        response = urllib2.urlopen(req,timeout=30)
+        link = response.read()
+        response.close()
+        return link
+
 params=parameters_string_to_dict(sys.argv[2])
 url=None
 mode=None
@@ -86,6 +106,8 @@ if mode==None or url==None or len(url)<1:
        
 elif mode==2:
         listVideos(url)
+elif mode==9:
+        liveStream()
 """elif mode==2:
         playVideo(url)
 elif mode==7:
