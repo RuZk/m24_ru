@@ -21,17 +21,26 @@ def index():
         addDir(title, url, 2)
     addLink("M24 Live Stream", liveStream(), '')
 	
-def listVideos(url):
+def listVideos(url, page = 1):
+    addDir("Список разделов", "", 0)
     soup = getHtml(url)
     video = soup.find('div', attrs={'id' : 'VideosList'}).findAll('a')
     for vi in video:
         title = str(vi.contents[2]).decode('utf8').strip().replace("&quot;", '"')
-        url = str(vi.img['src']).decode('utf8')
-        videoUrl = re.compile(".+?/([0-9]+)\..+?").findall(url)[0]
+        imgUrl = str(vi.img['src']).decode('utf8')
+        videoUrl = re.compile(".+?/([0-9]+)\..+?").findall(imgUrl)[0]
         videoUrl = videoPattern % videoUrl
 #        print title, url, videoUrl
-        addLink(title, videoUrl, url)
-    #next page
+        addLink(title, videoUrl, imgUrl)
+    if page == 1:
+        newUrl = url + '&page=2'
+    else:
+        newUrl = re.sub(r'page=[0-9]+', 'page='+str(page+1), url)
+    addDir("Следующая страница ("+str(page+1)+")", newUrl, 2, page+1)
+    
+#        t = re.findall("page=[0-9]+", url)
+#    newUrl = re.sub(r'page=[0-9]+', 'page='+str(page+1), url)
+#        addDir(str(t), newUrl, 2)
     return 1
 	
 def liveStream():
@@ -40,7 +49,7 @@ def liveStream():
         player = getUrl(url)
         url = re.compile('\"video\":\"(.+?)\"', re.DOTALL).findall(player)[0]
         url = url.replace('\\', '')
-        return url
+        return url+' live=true timeout=60'
         #listitem = xbmcgui.ListItem(path=url)
         #return xbmcplugin.setResolvedUrl(pluginhandle, True, listitem)	
 
@@ -62,9 +71,9 @@ def addLink(title, url, thumb, mode = 0):
     xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=url, listitem=item)
 
 
-def addDir(title, url, mode):
+def addDir(title, url, mode, page = 1):
 #sys_url = sys.argv[0] + '?title=' + urllib.quote_plus(title) + '&url=' + urllib.quote_plus(url) + '&mode=' + urllib.quote_plus(str(mode))
-    sys_url = sys.argv[0] + '?url=' + urllib.quote_plus(url) + '&mode=' + urllib.quote_plus(str(mode))
+    sys_url = sys.argv[0] + '?url=' + urllib.quote_plus(url) + '&mode=' + urllib.quote_plus(str(mode)) + '&page=' + str(page)
     item = xbmcgui.ListItem(title, iconImage='DefaultFolder.png', thumbnailImage='')
     item.setInfo( type='Video', infoLabels={'Title': title} )
     xbmcplugin.addDirectoryItem(handle=int(sys.argv[1]), url=sys_url, listitem=item, isFolder=True)
@@ -92,20 +101,25 @@ url=None
 mode=None
 
 try:
-        url=urllib.unquote_plus(params["url"])
+        url = urllib.unquote_plus(params["url"])
 except:
         pass
 try:
-        mode=int(params["mode"])
+        mode = int(params["mode"])
 except:
         pass
-
+try:
+        page = int(params["page"])
+except:
+        page = 1
+        pass    
+xbmc.log(str(params))
 
 if mode==None or url==None or len(url)<1:
         index()
        
 elif mode==2:
-        listVideos(url)
+        listVideos(url, page)
 elif mode==9:
         liveStream()
 """elif mode==2:
