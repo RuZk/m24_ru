@@ -17,9 +17,17 @@ def index():
     for i in t:
         title = str(i.span.contents[0]).decode('utf8')
         url = str(i['href']).decode('utf8')
-#		print title, url
         addDir(title, url, 2)
+    addDir("Программы по категориям", '/videos?type=programs', 3)
     addLink("M24 Live Stream", liveStream(), '')
+    
+def programCat(url):
+    soup = getHtml(url)        
+    t = soup.find('div', attrs={'class' : 'SwitchMenuType2'}).findAll('a')
+    for i in t:
+        title = str(i.span.contents[0]).decode('utf8')
+        url = str(i['href']).decode('utf8')
+        addDir(title, url, 2)
 	
 def listVideos(url, page = 1):
     addDir("Список разделов", "", 0)
@@ -113,7 +121,7 @@ try:
 except:
         page = 1
         pass    
-xbmc.log(str(params))
+xbmc.log(str(url))
 
 if mode==None or url==None or len(url)<1:
         index()
@@ -122,6 +130,8 @@ elif mode==2:
         listVideos(url, page)
 elif mode==9:
         liveStream()
+elif mode==3:
+        programCat(url)
 """elif mode==2:
         playVideo(url)
 elif mode==7:
